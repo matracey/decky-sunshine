@@ -16,7 +16,11 @@ class Plugin:
     _last_version_info = None
 
     async def set_setting(self, key, value):
-        return self.settingManager.setSetting(key, value)
+        self.settingManager.setSetting(key, value)
+        # Update sunshineController immediately if runAsDeckUser setting changes
+        if key == "runAsDeckUser" and self.sunshineController is not None:
+            self.sunshineController.setRunAsDeckUser(value)
+        return True
 
     async def get_setting(self, key, default):
         return self.settingManager.getSetting(key, default)
@@ -120,6 +124,10 @@ class Plugin:
             self.settingManager.read()
             decky.logger.info(f"Read settings")
             self._log_settings(self)
+
+        # Load runAsDeckUser setting and apply it to the controller
+        runAsDeckUser = self.settingManager.getSetting("runAsDeckUser", False)
+        self.sunshineController.setRunAsDeckUser(runAsDeckUser)
 
         if not await self.sunshineController.ensureDependencies_async():
             decky.logger.error("Couldn't ensure dependencies")

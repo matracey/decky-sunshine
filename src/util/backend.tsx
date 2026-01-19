@@ -58,6 +58,22 @@ class Backend {
         return result === true;
     }
 
+    public getSetting = async <T,>(key: string, defaultValue: T): Promise<T> => {
+        const result = await this.call<{ key: string; default: T }, T>(
+            "get_setting",
+            { key, default: defaultValue }
+        );
+        return result !== null ? result : defaultValue;
+    };
+
+    public setSetting = async <T,>(key: string, value: T): Promise<boolean> => {
+        const result = await this.call<{ key: string; value: T }, boolean>(
+            "set_setting",
+            { key, value }
+        );
+        return result === true;
+    };
+
     private call<TRes>(method: string): Promise<TRes | null>;
     private call<TArgs, TRes>(method: string, args: TArgs): Promise<TRes | null>;
     private async call(method: string, args?: unknown): Promise<unknown | null>{

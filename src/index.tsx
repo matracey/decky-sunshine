@@ -6,6 +6,7 @@ import {
   ButtonItem,
   Spinner,
   showModal,
+  ToggleField,
 } from "decky-frontend-lib";
 import { FaSun } from "react-icons/fa";
 import backend from "./util/backend";
@@ -31,6 +32,7 @@ const Content: VFC = () => {
   const [credentials, setCredentials] = useState<{username: string, password: string} | null>(null);
   const [isGettingCredentials, setIsGettingCredentials] = useState<boolean>(false);
   const [getCredentialsReturnedValue, setGetCredentialsReturnedValue] = useState<boolean | null>(null);
+  const [runAsDeckUser, setRunAsDeckUser] = useState<boolean>(false);
 
   const updateSunshineState = async () => {
     const isSunshineRunning = await backend.isSunshineRunning();
@@ -50,7 +52,13 @@ const Content: VFC = () => {
       setIsInitializing(false);
     };
 
+    const loadRunAsDeckUserSetting = async () => {
+      const value = await backend.getSetting("runAsDeckUser", false);
+      setRunAsDeckUser(value);
+    };
+
     initializeIsSunshineRunning();
+    loadRunAsDeckUserSetting();
   }, []);
 
   useEffect(() => {
@@ -200,6 +208,22 @@ const Content: VFC = () => {
               </div>
         </PanelSectionRow>
       }
+
+      {/* Run as Deck User Setting */}
+      <PanelSectionRow>
+        <ToggleField
+          label="Run as Deck User"
+          description="Fixes portrait orientation issues in Desktop Mode. Requires restart."
+          checked={runAsDeckUser}
+          onChange={(value: boolean) => {
+            setRunAsDeckUser(value);
+            backend.setSetting("runAsDeckUser", value);
+          }}
+        />
+        <div style={{ fontSize: 12, opacity: 0.8, marginTop: 4 }}>
+          Note: running as a non-root user can disable the preferred hardware fullscreen capture method used in Game Mode, which may reduce performance, increase latency or entirely break capture while in Game Mode.
+        </div>
+      </PanelSectionRow>
 
       {/* Pairing Section */}
       <PanelSectionRow>

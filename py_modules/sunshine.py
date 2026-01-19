@@ -66,6 +66,7 @@ class SunshineController:
         """
         assert logger is not None
         self.logger = logger
+        self.runAsDeckUser = False
 
         sslContext = ssl.create_default_context()
         sslContext.check_hostname = False
@@ -78,6 +79,13 @@ class SunshineController:
         self.environment_variables["DISPLAY"] = ":0"
         self.environment_variables["FLATPAK_BWRAP"] = self.environment_variables.get("DECKY_PLUGIN_RUNTIME_DIR", "") + "/bwrap"
         self.environment_variables["LD_LIBRARY_PATH"] = "/usr/lib/:" + self.environment_variables.get("LD_LIBRARY_PATH", "")
+
+    def setRunAsDeckUser(self, enabled: bool) -> None:
+        """
+        Set whether Sunshine should run as the 'deck' user.
+        :param enabled: True to run as 'deck' user, False to run as root
+        """
+        self.runAsDeckUser = enabled
 
     def setCredentials(self, username, password) -> str:
         """
@@ -198,8 +206,15 @@ class SunshineController:
 
         # Run Sunshine
         try:
-            subprocess.Popen(f"sh -c 'flatpak run --socket=wayland {self.SunshineFlatpakAppId}'",
-                             env=self.environment_variables,
+            env_vars = self.environment_variables.copy()
+            if self.runAsDeckUser:
+                env_vars["XDG_RUNTIME_DIR"] = "/run/user/1000"
+                cmd = f"sh -c 'sudo -E -u deck flatpak run --socket=wayland {self.SunshineFlatpakAppId}'"
+            else:
+                cmd = f"sh -c 'flatpak run --socket=wayland {self.SunshineFlatpakAppId}'"
+            
+            subprocess.Popen(cmd,
+                             env=env_vars,
                              shell=True,
                              preexec_fn=os.setsid)
         except Exception as e:
